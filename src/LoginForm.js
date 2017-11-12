@@ -1,16 +1,27 @@
 import React, { Component } from 'react';
 import { Text } from 'react-native';
 import firebase from 'firebase';
-import { Card, CardSection, Button, Input } from './components/common';
+import {
+  Button,
+  Card,
+  CardSection,
+  Input,
+  Spinner
+} from './components/common';
 
 export default class Loginform extends Component {
-  state = {email: '', password: '', errorMessage: undefined};
+  state = {
+    email: '',
+    password: '',
+    errorMessage: undefined,
+    loading: false
+  };
 
-  async handleLoginError({code, message}) {
+  async handleLoginError ({code, message}) {
     if (code === 'auth/user-not-found') {
       try {
         await firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.password);
-        this.setState({errorMessage: undefined});
+        return true;
       } catch (err) {
         this.setState({errorMessage: err.message});
       }
@@ -21,19 +32,52 @@ export default class Loginform extends Component {
     } else if (code === 'auth/user-disabled') {
       this.setState({errorMessage: 'This user has been disabled'});
     } else {
-      console.log('UNKNOWN ERROR');
       this.setState({errorMessage: message});
     }
+    // unsuccessful
+    return false;
   }
 
   async handleLogin () {
+    this.toggleLoading();
+    this.setState({errorMessage: undefined});
     const {email, password} = this.state;
+    let success = false;
     try {
-      await firebase.auth().signInWithEmailAndPassword(email, password);
-      this.setState({errorMessage: undefined});
+      success = await firebase.auth().signInWithEmailAndPassword(email, password);
     } catch (err) {
-      await this.handleLoginError(err);
+      success = await this.handleLoginError(err);
     }
+
+    if (success) {
+      this.onLoginSuccess();
+    } else {
+      this.toggleLoading();
+    }
+  }
+
+  onLoginSuccess () {
+    this.setState({
+      email: '',
+      password: '',
+      loading: false
+    });
+  }
+
+  renderLoginButton () {
+    if (this.state.loading) {
+      return <Spinner size={'small'}/>;
+    }
+
+    return (
+      <Button onPress={() => this.handleLogin()}>
+        Login
+      </Button>
+    );
+  }
+
+  toggleLoading () {
+    this.setState({loading: !this.state.loading});
   }
 
   render () {
@@ -63,9 +107,7 @@ export default class Loginform extends Component {
         </Text>
 
         <CardSection>
-          <Button onPress={() => this.handleLogin()}>
-            Login
-          </Button>
+          {this.renderLoginButton()}
         </CardSection>
       </Card>
     );
