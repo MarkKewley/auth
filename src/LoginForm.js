@@ -6,7 +6,8 @@ import {
   Card,
   CardSection,
   Input,
-  Spinner
+  Spinner,
+  FirebaseHelper
 } from './components/common';
 
 export default class Loginform extends Component {
@@ -18,18 +19,19 @@ export default class Loginform extends Component {
   };
 
   async handleLoginError ({code, message}) {
-    if (code === 'auth/user-not-found') {
+    const { USER_NOT_FOUND, WRONG_PASSWORD, INVALID_EMAIL, USER_DISABLED } = FirebaseHelper.erorrCode;
+    if (code === USER_NOT_FOUND) {
       try {
         await firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.password);
         return true;
       } catch (err) {
         this.setState({errorMessage: err.message});
       }
-    } else if (code === 'auth/wrong-password') {
+    } else if (code === WRONG_PASSWORD) {
       this.setState({errorMessage: 'Invalid password'});
-    } else if (code === 'auth/invalid-email') {
+    } else if (code === INVALID_EMAIL) {
       this.setState({errorMessage: 'Invalid email'});
-    } else if (code === 'auth/user-disabled') {
+    } else if (code === USER_DISABLED) {
       this.setState({errorMessage: 'This user has been disabled'});
     } else {
       this.setState({errorMessage: message});
